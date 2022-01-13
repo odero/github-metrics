@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: "metricsapp"
+    static_configs:
+      - targets: ['metrics:8000']
+    scrape_interval: 1m
+    scrape_timeout: 10s

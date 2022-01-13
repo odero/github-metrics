@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  metricsapp:
+    container_name: metrics
+    build: .
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
+    volumes:
+      - './app/:/app'
+    env_file:
+      - .env
+
+  prometheusapp:
+    container_name: prometheus
+    image: prom/prometheus:v2.0.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - './prometheus/:/etc/prometheus'
+  

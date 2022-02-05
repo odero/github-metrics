@@ -4,6 +4,8 @@ import re
 import requests
 import logging
 
+from datetime import datetime, timedelta
+
 
 logger = logging.getLogger()
 
@@ -34,6 +36,19 @@ REPO_STRING = '''
     isArchived
     forks: forkCount
     stars: stargazerCount
+
+    closed_issues_set: issues(states: CLOSED, last: 30, filterBy: {{since: "{days_ago}"}}) {{
+      nodes {{
+        closedAt
+        createdAt
+      }}
+    }}
+    closed_prs_set: pullRequests(states: [CLOSED, MERGED], last: 30 ) {{
+      nodes {{
+        closedAt
+        createdAt
+      }}
+    }}
 }}
 '''
 
@@ -81,16 +96,25 @@ class GitFetcher:
     def _clean(self, text):
         return re.sub(r'[-\._]', '', text)
 
+    def days_ago(self, days=30):
+        days_ago = datetime.utcnow() - timedelta(days=days)
+        return days_ago.strftime('%Y-%m-%dT00:00:00')
+
     def fetch_stats(self):
         repos = self._get_repos()
         repo_queries = []
+
         for repo in repos:
             # split owner and repo name
             owner, repo = repo.split('/')
             clean_owner, clean_repo = self._clean(owner), self._clean(repo)
             repo_queries.append(
                 REPO_STRING.format(
-                    clean_owner=clean_owner, owner=owner, clean_repo=clean_repo, repo=repo
+                    clean_owner=clean_owner,
+                    owner=owner,
+                    clean_repo=clean_repo,
+                    repo=repo,
+                    days_ago=self.days_ago(),
                 )
             )
 

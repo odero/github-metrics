@@ -2,6 +2,8 @@
 import json
 import logging
 
+from datetime import datetime
+
 from prometheus_client.core import GaugeMetricFamily
 
 from .fetcher import GitFetcher
@@ -80,6 +82,12 @@ class GitHubCollector:
             'forks' : GaugeMetricFamily(
                 self.build_name('forks'), 'Total number of forks', labels=labels
             ),
+            'average_pr_open_time': GaugeMetricFamily(
+                self.build_name('average_pr_open_time'), 'Average time PRs stay open before being closed', labels=labels
+            ),
+            'average_issue_open_time': GaugeMetricFamily(
+                self.build_name('average_issue_open_time'), 'Average time issues stay open before being closed', labels=labels
+            ),
         }
 
     def collect(self):
@@ -104,3 +112,16 @@ class GitHubCollector:
             self.repo_metrics['merged_prs'].add_metric(label_values, props['merged_prs']['totalCount'])
             self.repo_metrics['stars'].add_metric(label_values, props['stars'])
             self.repo_metrics['forks'].add_metric(label_values, props['forks'])
+
+            self.repo_metrics['average_pr_open_time'].add_metric(label_values, self.get_average_pr_issue_open_time(props['closed_prs_set']['nodes']))
+            self.repo_metrics['average_issue_open_time'].add_metric(label_values, self.get_average_pr_issue_open_time(props['closed_issues_set']['nodes']))
+            # self.repo_metrics['active_pr_open_time']
+
+    def get_average_pr_issue_open_time(self, nodes):
+        diffs = []
+        for row in nodes:
+            closed_at = datetime.strptime(row['closedAt'], '%Y-%m-%dT%H:%M:%SZ')
+            created_at = datetime.strptime(row['createdAt'], '%Y-%m-%dT%H:%M:%SZ')
+            delta = closed_at - created_at
+            diffs.append(delta.days)
+        return sum(diffs)/len(diffs)

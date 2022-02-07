@@ -7,8 +7,10 @@ import os
 import json
 
 from .metrics import GitHubCollector
+from .fetcher import GitFetcher
 
-REGISTRY.register(GitHubCollector())
+fetcher = GitFetcher()
+REGISTRY.register(GitHubCollector(fetcher))
 
 app = Flask(__name__)
 

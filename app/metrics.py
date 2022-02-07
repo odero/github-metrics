@@ -6,7 +6,6 @@ from datetime import datetime
 
 from prometheus_client.core import GaugeMetricFamily
 
-from .fetcher import GitFetcher
 
 logger = logging.getLogger()
 
@@ -29,6 +28,9 @@ class Limits:
 
 
 class GitHubCollector:
+
+    def __init__(self, fetcher):
+        self.client = fetcher
 
     def build_name(self, name, namespace='github', subsystem='repo', unit='total'):
         return f'{namespace}_{subsystem}_{name}_{unit}'
@@ -92,8 +94,7 @@ class GitHubCollector:
 
     def collect(self):
         self.initialize()
-        client = GitFetcher()
-        self.data, headers = client.fetch_stats()
+        self.data, headers = self.client.fetch_stats()
         self.set_limit_metrics(headers)
         for limit_metric in self.limit_metrics:
             yield limit_metric
